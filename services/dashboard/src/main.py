@@ -45,7 +45,7 @@ def get_cumulative_value(df, row, value):
     else:
         return cumulative_values.iloc[-1]
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=14400)
 def get_pnl_summary(df_debt, df_transfer, df_trade):
     # st.write(f'Creating aggregations for {df_debt.shape[0]} debt snapshots')
     # st.write('Summarizing transfers')
