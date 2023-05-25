@@ -1,4 +1,5 @@
--e git+ssh://git@github.com/Tburm/synthetix-sdk.git@88812da15dcfe6c96db392ab6d0f704948050ee8#egg=synthetix&subdirectory=src
 streamlit
 plotly
+SQLAlchemy
 psycopg2
+watchdog

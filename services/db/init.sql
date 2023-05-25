@@ -13,4 +13,3 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO user_read_only;
 
 -- Future permissions
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO user_read_only;
-
