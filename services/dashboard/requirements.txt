@@ -1,0 +1,5 @@
+streamlit
+plotly
+SQLAlchemy
+psycopg2
+watchdog
