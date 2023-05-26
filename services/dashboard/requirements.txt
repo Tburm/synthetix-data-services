@@ -1,5 +1,5 @@
 streamlit
 plotly
-slqalchemy
+sqlalchemy
 psycopg2
 watchdog
