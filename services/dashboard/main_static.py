@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine
 import plotly.express as px
 
 st.set_page_config(
