@@ -2,4 +2,3 @@ streamlit
 plotly
 sqlalchemy
 psycopg2
-watchdog
