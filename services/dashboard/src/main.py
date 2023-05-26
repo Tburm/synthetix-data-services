@@ -24,15 +24,15 @@ def init_connection():
 conn = init_connection()
 
 # perform query and return results
-@st.cache_data(ttl=14400)
+@st.cache_data(ttl=600)
 def run_query(query):
     df = pd.read_sql(query, conn)
     return df
 
 # load data
-df_trade = run_query('SELECT * FROM trades ORDER BY asset, timestamp')
-df_transfer = run_query('SELECT * FROM transfers ORDER BY asset, timestamp')
-df_debt = run_query('SELECT * FROM market_debt ORDER BY asset, timestamp')
+df_trade = run_query('SELECT * FROM trades ORDER BY timestamp')
+df_transfer = run_query('SELECT * FROM transfers ORDER BY timestamp')
+df_debt = run_query('SELECT * FROM market_debt ORDER BY timestamp')
 
 # add cumulative values
 df_transfer['cumulative_size'] = df_transfer.groupby('asset')['size'].cumsum()
@@ -46,19 +46,30 @@ def get_cumulative_value(df, row, value):
     else:
         return cumulative_values.iloc[-1]
 
-@st.cache_data(ttl=14400)
+@st.cache_data(ttl=600)
 def get_pnl_summary(df_debt, df_transfer, df_trade):
-    net_transfers = df_debt.apply(lambda row: get_cumulative_value(df_transfer, row, 'size'), axis=1)
-    fees_paid = df_debt.apply(lambda row: get_cumulative_value(df_trade, row, 'feespaid'), axis=1)
+    # calculate cumulative values
+    df_transfer['cumulative_size'] = df_transfer.groupby('asset')['size'].cumsum()
+    df_trade['cumulative_fees_paid'] = df_trade.groupby('asset')['feespaid'].cumsum()
+
+    # Use merge_asof to carry forward values with respect to a timestamp
+    df_debt = pd.merge_asof(df_debt, df_transfer[['asset', 'timestamp', 'cumulative_size']], on='timestamp', by='asset', direction='backward')
+    df_debt = pd.merge_asof(df_debt, df_trade[['asset', 'timestamp', 'cumulative_fees_paid']], on='timestamp', by='asset', direction='backward')
+
+    # fill missing values with 0
+    df_debt['net_transfers'] = df_debt['cumulative_size'].fillna(0)
+    df_debt['fees_paid'] = df_debt['cumulative_fees_paid'].fillna(0)
+    df_debt.drop(['cumulative_size', 'cumulative_fees_paid'], axis=1, inplace=True)
+
+    # sort the dataframe
+    df_debt = df_debt.sort_values(['asset', 'timestamp'])
+
+    # add columns
+    df_debt['date'] = pd.to_datetime(df_debt['timestamp'], unit='s')
+    df_debt['net_pnl'] = df_debt['market_debt'] - df_debt['net_transfers'] - df_debt['fees_paid']
+    df_debt['staker_pnl'] = -df_debt['net_pnl']
 
     df_pnl = df_debt.copy(deep=True)
-
-    df_pnl['net_transfers'] = net_transfers
-    df_pnl['fees_paid'] = fees_paid
-
-    df_pnl['date'] = pd.to_datetime(df_pnl['timestamp'], unit='s')
-    df_pnl['net_pnl'] = df_pnl['market_debt'] - df_pnl['net_transfers'] - df_pnl['fees_paid']
-    df_pnl['staker_pnl'] = -df_pnl['net_pnl']
     return df_pnl
 
 df_pnl = get_pnl_summary(df_debt, df_transfer, df_trade)
