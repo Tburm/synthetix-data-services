@@ -17,7 +17,7 @@ st.markdown(hide_footer, unsafe_allow_html=True)
 
 @st.cache_data(ttl=1)
 def get_pnl_summary():
-    df_pnl = pd.read_csv('./src/data/market_pnl.csv')
+    df_pnl = pd.read_csv('./data/market_pnl.csv')
     return df_pnl
 
 df_pnl = get_pnl_summary()
